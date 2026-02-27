@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartStock System</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Segoe UI, sans-serif;
+    background:linear-gradient(120deg,#FF1493,#243b55);
+    color:white;
+}
+
+/* LANDING PAGE */
+.hero{
+    height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+}
+.hero h1{
+    font-size:40px;
+    margin:10px;
+}
+.hero p{
+    width:80%;
+    max-width:500px;
+    opacity:0.8;
+}
+.hero button{
+    padding:12px 25px;
+    margin:10px;
+    border:none;
+    border-radius:25px;
+    background:#F36196;
+    color:white;
+    cursor:pointer;
+    font-size:16px;
+}
+.hero button:hover{
+    background:#0099cc;
+}
+
+/* FORM CARD */
+.container{
+    display:none;
+    padding:20px;
+}
+.card{
+    max-width:400px;
+    margin:auto;
+    background:rgba(255,255,255,0.1);
+    padding:20px;
+    border-radius:15px;
+}
+input,button{
+    width:100%;
+    padding:10px;
+    margin:8px 0;
+    border:none;
+    border-radius:8px;
+}
+button{
+    background:#00c6ff;
+    color:white;
+    cursor:pointer;
+}
+.link{
+    color:#00c6ff;
+    cursor:pointer;
+}
+
+/* DASHBOARD */
+nav{
+    background:#0f2027;
+    padding:15px;
+    display:none;
+    justify-content:space-between;
+}
+.section{
+    padding:20px;
+}
+table{
+    width:100%;
+    background:white;
+    color:black;
+    border-collapse:collapse;
+}
+th,td{
+    padding:8px;
+    border:1px solid #ccc;
+}
+.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<!-- LANDING PAGE -->
+<div class="hero" id="landing">
+<h1>SmartStock System</h1>
+<p>Sistem manajemen inventory modern untuk mengelola stok barang secara cepat dan efisien.</p>
+<button onclick="showLogin()">Masuk</button>
+<button onclick="showRegister()">Daftar</button>
+</div>
+
+<!-- AUTH CONTAINER -->
+<div class="container" id="authContainer">
+
+<div class="card" id="loginPage">
+<h3>Login</h3>
+<input type="email" id="loginEmail" placeholder="Email">
+<input type="password" id="loginPass" placeholder="Password">
+<button onclick="login()">Login</button>
+<p>Belum punya akun? <span class="link" onclick="showRegister()">Daftar</span></p>
+</div>
+
+<div class="card hidden" id="registerPage">
+<h3>Daftar</h3>
+<input type="text" id="regNama" placeholder="Nama">
+<input type="email" id="regEmail" placeholder="Email">
+<input type="password" id="regPass" placeholder="Password">
+<button onclick="register()">Daftar</button>
+<p><span class="link" onclick="showLogin()">Kembali</span></p>
+</div>
+
+</div>
+
+<!-- DASHBOARD -->
+<nav id="navbar">
+<span>SmartStock Dashboard</span>
+<button onclick="logout()">Logout</button>
+</nav>
+
+<div id="dashboard" class="hidden">
+
+<div class="section">
+<h2 id="welcome"></h2>
+<input type="text" id="namaBarang" placeholder="Nama Barang">
+<input type="number" id="stokBarang" placeholder="Jumlah Stok">
+<button onclick="tambahBarang()">Tambah Barang</button>
+</div>
+
+<div class="section">
+<h3>Data Inventory</h3>
+<div id="tabelBarang"></div>
+</div>
+
+</div>
+
+<script>
+let currentUser=null;
+
+/* AKUN DEFAULT */
+if(!localStorage.getItem("admin@smart.com")){
+    localStorage.setItem("admin@smart.com",JSON.stringify({
+        nama:"Admin SmartStock",
+        email:"admin@smart.com",
+        pass:"smart123"
+    }));
+}
+
+function showLogin(){
+    landing.style.display="none";
+    authContainer.style.display="block";
+    loginPage.classList.remove("hidden");
+    registerPage.classList.add("hidden");
+}
+
+function showRegister(){
+    landing.style.display="none";
+    authContainer.style.display="block";
+    loginPage.classList.add("hidden");
+    registerPage.classList.remove("hidden");
+}
+
+function login(){
+    let data=localStorage.getItem(loginEmail.value.trim());
+    if(!data){alert("Akun tidak ditemukan");return;}
+    let user=JSON.parse(data);
+    if(user.pass===loginPass.value){
+        currentUser=user;
+        authContainer.style.display="none";
+        navbar.style.display="flex";
+        dashboard.classList.remove("hidden");
+        welcome.innerText="Halo, "+user.nama;
+        tampilBarang();
+    }else{
+        alert("Password salah!");
+    }
+}
+
+function register(){
+    let user={
+        nama:regNama.value,
+        email:regEmail.value,
+        pass:regPass.value
+    };
+    localStorage.setItem(user.email,JSON.stringify(user));
+    alert("Berhasil daftar!");
+    showLogin();
+}
+
+function logout(){
+    currentUser=null;
+    navbar.style.display="none";
+    dashboard.classList.add("hidden");
+    landing.style.display="flex";
+}
+
+function tambahBarang(){
+    let barang=JSON.parse(localStorage.getItem("inventory"))||[];
+    barang.push({
+        nama:namaBarang.value,
+        stok:stokBarang.value
+    });
+    localStorage.setItem("inventory",JSON.stringify(barang));
+    tampilBarang();
+}
+
+function tampilBarang(){
+    let barang=JSON.parse(localStorage.getItem("inventory"))||[];
+    let html="<table><tr><th>Nama Barang</th><th>Stok</th><th>Aksi</th></tr>";
+    barang.forEach((b,i)=>{
+        html+="<tr>"+
+        "<td>"+b.nama+"</td>"+
+        "<td>"+b.stok+"</td>"+
+        "<td><button onclick='hapusBarang("+i+")'>Hapus</button></td>"+
+        "</tr>";
+    });
+    html+="</table>";
+    tabelBarang.innerHTML=html;
+}
+
+function hapusBarang(i){
+    let barang=JSON.parse(localStorage.getItem("inventory"))||[];
+    barang.splice(i,1);
+    localStorage.setItem("inventory",JSON.stringify(barang));
+    tampilBarang();
+}
+</script>
+
+</body>
+</html>
